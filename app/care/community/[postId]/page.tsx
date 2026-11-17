@@ -1,69 +1,35 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { getPost, displayPost } from '@/lib/posts';
+import PostCard from '@/app/components/PostCard';
+import DeletePost from '@/app/components/DeletePost';
+import { listComments } from '@/lib/comments';
+import { CommentForm, DeleteComment, ReportForm } from '@/app/components/CommunityInteractions';
 
-const post = {
-  id: 1,
-  author: 'Maya',
-  role: 'survivor',
-  time: '2h ago',
-  tag: 'Nutrition',
-  body: 'Looking for practical meal ideas for low-energy days and what has helped others maintain appetite. I’d love to talk to anyone who has found a routine that works and doesn’t feel overwhelming.',
-};
-
-const comments = [
-  { author: 'Lena', body: 'Soup and smoothies helped me most during difficult treatment weeks.', time: '1h ago' },
-  { author: 'Theo', body: 'A small grocery delivery service saved me on the days when I had no energy to shop.', time: '48m ago' },
-];
-
-export default function PostDetailPage() {
-  return (
-    <main className="page">
-      <div className="breadcrumbs">CARE / Community / Post</div>
-      <div className="page-header">
-        <div>
-          <h1>Community thread</h1>
-          <p className="lead">Supportive discussion and shared strategies.</p>
-        </div>
-        <Link href="/care/community" className="secondary-btn">Back to feed</Link>
-      </div>
-
-      <article className="post-card" style={{ marginBottom: 18 }}>
-        <div className="post-header">
-          <div className="user-badge">
-            <div className="avatar">{post.author.charAt(0)}</div>
-            <div>
-              <div>{post.author}</div>
-              <div className="meta">{post.role} • {post.time}</div>
-            </div>
-          </div>
-          <span className="chip">{post.tag}</span>
-        </div>
-        <p style={{ marginTop: 16 }}>{post.body}</p>
-        <div className="actions-row">
-          <button className="chip">♥ 24</button>
-          <button className="chip">💬 7</button>
-          <button className="chip">Report</button>
-        </div>
-      </article>
-
-      <div className="profile-panel">
-        <h3>Comments</h3>
-        <div style={{ display: 'grid', gap: 16, marginTop: 16 }}>
-          {comments.map((comment) => (
-            <div key={comment.author} className="list-row">
-              <div>
-                <strong>{comment.author}</strong>
-                <div className="meta">{comment.time}</div>
-                <p style={{ marginTop: 8 }}>{comment.body}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="field" style={{ marginTop: 20 }}>
-          <label htmlFor="comment">Add a comment</label>
-          <textarea id="comment" placeholder="Share a tip or words of encouragement" />
-        </div>
-        <button className="primary-btn" style={{ marginTop: 16 }}>Post comment</button>
-      </div>
-    </main>
-  );
+export default async function PostDetailPage({ params, searchParams }: { params: Promise<{ postId: string }>; searchParams: Promise<{ comments?: string }> }) {
+  const { postId } = await params;
+  const session = await auth.api.getSession({ headers: await headers() });
+  const post = await getPost(postId, session?.user.id);
+  if (!post) notFound();
+  const owned = post.owned;
+  const raw = (await searchParams).comments;
+  const page = raw && /^\d{1,6}$/.test(raw) ? Math.max(1, Number(raw)) : 1;
+  const { comments, hasMore } = await listComments(post.id, session?.user.id, page);
+  return <main className="page"><div className="page-header"><div>
+    <div className="breadcrumbs">CARE / Community / Post</div><h1>Community post</h1></div>
+    <Link href="/care/community" className="secondary-btn">Back to feed</Link></div>
+    <PostCard post={displayPost(post)} owned={owned} detail signedIn={!!session} />
+    {owned && <div style={{ marginTop: 18 }}><DeletePost id={post.id} /></div>}
+    <section id="comments" className="profile-panel" style={{ marginTop: 20 }}><h2>Comments</h2>
+      {!comments.length && <p>No comments yet. Share some encouragement.</p>}
+      {comments.map(comment => <article key={comment.id} className="post-card" style={{ marginTop: 16 }}>
+        <strong>{comment.author}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{comment.content}</p>
+        <div className="actions-row">{comment.owned && <DeleteComment postId={post.id} id={comment.id} />}{session && <ReportForm postId={post.id} commentId={comment.id} />}</div>
+      </article>)}
+      <nav className="actions-row" aria-label="Comment pages">{page > 1 && <Link href={`?comments=${page - 1}#comments`}>Previous comments</Link>}{hasMore && <Link href={`?comments=${page + 1}#comments`}>More comments</Link>}</nav>
+      {session ? <CommentForm postId={post.id} /> : <Link href="/login" className="secondary-btn">Sign in to comment or send support</Link>}
+    </section>
+  </main>;
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import AccountMenu from './AccountMenu';
 
 const navItems = [
   { label: 'CARE', href: '/care' },
@@ -39,6 +40,7 @@ export default function Header() {
             );
           })}
         </nav>
+        <AccountMenu />
       </div>
     </header>
   );

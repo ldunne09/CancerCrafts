@@ -1,16 +1,8 @@
-export default function AdminResourcesPage() {
-  return (
-    <main className="page">
-      <div className="page-header">
-        <div>
-          <div className="breadcrumbs">ADMIN / Resources</div>
-          <h1>Resource directory</h1>
-        </div>
-      </div>
-      <div className="profile-panel">
-        <div className="list-row"><div><strong>Cancer Support Center</strong><div className="meta">Support • active</div></div><button className="mini-btn">Review</button></div>
-        <div className="list-row"><div><strong>Ride for Treatment</strong><div className="meta">Transportation • active</div></div><button className="mini-btn">Review</button></div>
-      </div>
-    </main>
-  );
+import Link from 'next/link';
+import { pageNumber } from '@/lib/admin-queries';
+import { resourceList } from '@/lib/resources';
+export default async function Page({searchParams}:{searchParams:Promise<{page?:string}>}){
+  const page=pageNumber((await searchParams).page);const resources=await resourceList({page},true);
+  return <main className="page"><div className="page-header"><h1>Resource directory management</h1><Link className="primary-btn" href="/admin/resources/new">Add resource</Link></div><p>Published resources appear in CARE. Disable a resource to remove it from the public directory.</p>{!resources.length&&<p>No resources added yet.</p>}{resources.slice(0,24).map(resource=><article className="profile-panel" key={resource.id} style={{marginTop:12}}><h2>{resource.name}</h2><p>{resource.is_active?'Published':'Disabled'}</p><Link className="secondary-btn" href={`/admin/resources/${resource.id}/edit`}>Edit resource</Link></article>)}
+    <nav className="actions-row" aria-label="Resource pages">{page>1&&<Link href={`?page=${page-1}`}>Previous resources</Link>}{resources.length>24&&<Link href={`?page=${page+1}`}>More resources</Link>}</nav></main>;
 }

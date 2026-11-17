@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import HomeAccountActions from './components/HomeAccountActions';
 
 const features = [
   {
@@ -62,10 +63,7 @@ export default function HomePage() {
           <p>
             CancerCrafts brings together community care, real help requests, and small income opportunities in one compassionate platform for patients and survivors.
           </p>
-          <div className="actions">
-            <Link href="/login" className="primary-btn">Sign in</Link>
-            <Link href="/signup" className="secondary-btn">Create account</Link>
-          </div>
+          <HomeAccountActions />
           <div className="stats-grid">
             {stats.map((stat) => (
               <div key={stat.label} className="stat-card">

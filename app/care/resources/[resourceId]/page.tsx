@@ -1,49 +1,11 @@
 import Link from 'next/link';
-
-const resource = {
-  id: 1,
-  title: 'Cancer Support Center',
-  type: 'Support',
-  city: 'Seattle, WA',
-  website: 'https://example.org/support',
-  description: 'Peer mentoring, practical care coordination, and local guidance for patients and caregivers managing treatment and recovery.',
-  details: [
-    'One-on-one peer support calls',
-    'Caregiver guidance and checklists',
-    'Local workshops and community events',
-    'Resource referral help',
-  ],
-};
-
-export default function ResourceDetailPage() {
-  return (
-    <main className="page">
-      <div className="breadcrumbs">CARE / Resources / Details</div>
-      <div className="page-header">
-        <div>
-          <h1>{resource.title}</h1>
-          <p className="lead">{resource.type} • {resource.city}</p>
-        </div>
-        <Link href="/care/resources" className="secondary-btn">Back to resources</Link>
-      </div>
-
-      <div className="profile-grid">
-        <div className="profile-panel">
-          <div className="thumb" style={{ minHeight: 220 }} />
-        </div>
-        <div className="profile-panel">
-          <p>{resource.description}</p>
-          <ul style={{ lineHeight: 1.9, color: 'var(--muted)', paddingLeft: 18 }}>
-            {resource.details.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-          <div className="actions-row">
-            <a href={resource.website} target="_blank" rel="noreferrer" className="primary-btn">Visit website</a>
-            <button className="secondary-btn">Save resource</button>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
+import { notFound } from 'next/navigation';
+import { getResource } from '@/lib/resources';
+import { resourceCategories } from '@/lib/resource-validation';
+export const dynamic='force-dynamic';
+export default async function Page({params}:{params:Promise<{resourceId:string}>}){
+  const resource=await getResource((await params).resourceId);if(!resource)notFound();
+  return <main className="page"><div className="page-header"><div><h1>{resource.name}</h1><p className="lead">{resourceCategories[resource.category as keyof typeof resourceCategories]} · {resource.location}</p></div><Link href="/care/resources" className="secondary-btn">Back to resources</Link></div>
+    <div className="profile-panel"><h2>{resource.organization}</h2><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{resource.description}</p>{resource.phone&&<p>Phone: {resource.phone}</p>}{resource.website_url&&<a className="primary-btn" href={resource.website_url} target="_blank" rel="noreferrer noopener">Visit website</a>}</div>
+  </main>;
 }

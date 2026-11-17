@@ -1,63 +1,18 @@
+import { requireSession } from '@/lib/session';
 import Link from 'next/link';
-
-const activity = [
-  { label: 'Community post', value: 'A shared ride list for weekly treatment visits' },
-  { label: 'Marketplace item', value: 'Handmade comfort basket listed for sale' },
-  { label: 'Assistance support', value: 'Donated $25 to a local transportation request' },
-];
-
-export default function ProfilePage() {
-  return (
-    <main className="page">
-      <div className="page-header">
-        <div>
-          <div className="breadcrumbs">PROFILE</div>
-          <h1>Profile</h1>
-          <p className="lead">Track your activity, profile, and support impact.</p>
-        </div>
-        <Link href="/profile/edit" className="primary-btn">Edit profile</Link>
-      </div>
-
-      <div className="profile-grid">
-        <div className="profile-panel">
-          <div className="user-badge" style={{ marginBottom: 16 }}>
-            <div className="avatar" style={{ width: 60, height: 60 }}>JS</div>
-            <div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>Jordan Smith</div>
-              <div className="meta">patient • Seattle, WA</div>
-            </div>
-          </div>
-          <p>Looking for practical support, neighborhood guidance, and small ways to connect with others navigating treatment.</p>
-          <div className="summary-box">
-            <div>
-              <span className="meta">Posts</span>
-              <strong>18</strong>
-            </div>
-            <div>
-              <span className="meta">Support given</span>
-              <strong>7</strong>
-            </div>
-            <div>
-              <span className="meta">Sales</span>
-              <strong>$240</strong>
-            </div>
-          </div>
-        </div>
-
-        <div className="profile-panel">
-          <h3>Recent activity</h3>
-          <div style={{ display: 'grid', gap: 12, marginTop: 14 }}>
-            {activity.map((item) => (
-              <div key={item.label} className="list-row">
-                <div>
-                  <strong>{item.label}</strong>
-                  <div className="meta" style={{ marginTop: 4 }}>{item.value}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
-  );
+import { hasAdminPermission } from '@/lib/admin';
+import { ownProfile } from '@/lib/profile';
+export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ updated?: string }> }) {
+  const { user } = await requireSession();
+  const [administrator, profile, search] = await Promise.all([hasAdminPermission(user.id), ownProfile(user.id), searchParams]);
+  return <main className="page">
+    <div className="page-header"><div><div className="breadcrumbs">PROFILE</div><h1>Your profile</h1>
+      <p className="lead">Welcome to CancerCrafts, {user.name}.</p></div><Link href="/profile/edit" className="primary-btn">Edit profile</Link></div>
+    {search.updated === '1' && <p role="status">Profile updated.</p>}
+    <div className="profile-panel"><h2>{user.name}</h2><p>{user.role}</p><p>{user.email}</p>
+      {profile.location && <p>Location: {profile.location}</p>}
+      {profile.bio && <div><h3>Bio</h3><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{profile.bio}</p></div>}
+      {!profile.location && !profile.bio && <p className="meta">Add an optional location or bio using Edit profile.</p>}</div>
+    {administrator&&<div className="actions-row"><Link href="/admin" className="primary-btn">Admin dashboard</Link></div>}
+  </main>;
 }

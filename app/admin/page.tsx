@@ -1,34 +1,7 @@
 import Link from 'next/link';
-
-const adminCards = [
-  { title: 'Users', path: '/admin/users', count: '1,284' },
-  { title: 'Posts', path: '/admin/posts', count: '6,420' },
-  { title: 'Products', path: '/admin/products', count: '418' },
-  { title: 'Assistance', path: '/admin/assistance', count: '161' },
-  { title: 'Resources', path: '/admin/resources', count: '84' },
-  { title: 'Reports', path: '/admin/reports', count: '23' },
-];
-
-export default function AdminPage() {
-  return (
-    <main className="page">
-      <div className="page-header">
-        <div>
-          <div className="breadcrumbs">ADMIN</div>
-          <h1>Admin dashboard</h1>
-          <p className="lead">A simple overview of community health and operational activity.</p>
-        </div>
-      </div>
-
-      <div className="admin-grid">
-        {adminCards.map((card) => (
-          <Link key={card.title} href={card.path} className="admin-card">
-            <div className="meta">{card.title}</div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, margin: '12px 0 6px' }}>{card.count}</div>
-            <span className="chip">Open dashboard</span>
-          </Link>
-        ))}
-      </div>
-    </main>
-  );
+import { adminOverview } from '@/lib/admin-queries';
+export default async function Page(){
+  const counts=await adminOverview();
+  const cards=[['Users','/admin/users',counts.users],['Posts','/admin/posts',counts.posts],['Open reports','/admin/reports',counts.reports],['Published resources','/admin/resources',counts.resources],['Listings','/admin/products',counts.listings],['Assistance requests','/admin/assistance',counts.requests]] as const;
+  return <main className="page"><div className="page-header"><div><h1>Admin dashboard</h1><p className="lead">Review community reports, moderate content, and maintain resources.</p></div></div><div className="admin-grid">{cards.map(([name,href,count])=><Link className="admin-card" key={href} href={href}><h2>{name}</h2><p style={{fontSize:'2rem'}}>{count}</p></Link>)}</div></main>;
 }
